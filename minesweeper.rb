@@ -3,24 +3,25 @@ class MineSweeper
   def initialize
     new_board = Board.new
     new_board.generate
-    @board = new_board.board
+    @board = new_board
   end
 
 
   def reveal(position)
     x, y = position
-    if @board[x][y].bombed
+    if @board.board[x][y].bombed
       puts "You lose!"
       return
-    elsif !@board[x][y].revealed
+    elsif !@board.board[x][y].revealed
       bomb_free_neighbors, number_of_bombs = check_neighbors(x, y)
+      @board.board[x][y].revealed = true
+
       if number_of_bombs == 0
-        @board[x][y].revealed = true
+        @board.board[x][y].display_value = "_ "
+      else
+        @board.board[x][y].display_value = number_of_bombs.to_s + " "
+      end
         if number_of_bombs == 0
-          @board[x][y].display_value = "_ "
-        else
-          @board[x][y].display_value = number_of_bombs.to_s + " "
-        end
         bomb_free_neighbors.each do |tile|
           reveal(tile)
         end
@@ -33,8 +34,8 @@ class MineSweeper
     number_of_bombs = 0
     (-1..1).each do |i|
       (-1..1).each do |j|
-        if !@board[x + i][y + j].nil?
-          if !@board[x + i][y + j].bombed
+        if  (x + i >= 0) && (x + i < @board.board.size) && (y + j >= 0) && (y + j < @board.board.size)
+          if !@board.board[x + i][y + j].bombed
             bomb_free_neighbors << [x + i, y + j]
           else
             number_of_bombs += 1
@@ -111,5 +112,6 @@ class Board
 end
 
 
-game = MineSweeper.new
-game.board
+# game = MineSweeper.new
+# game.reveal([1,1])
+# game.board.display
