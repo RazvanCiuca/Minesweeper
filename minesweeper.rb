@@ -1,9 +1,24 @@
+require 'yaml'
+
 class MineSweeper
   attr_accessor :board
-  def initialize
-    new_board = Board.new
-    new_board.generate
+  def initialize(save_file = "new" )
+    if save_file != "new"
+      save_contents = []
+      File.readlines(save_file).each do |line|
+        save_contents << line
+      end
+
+      new_board = YAML.load(save_contents[0..-2].join(""))
+      @total_time = save_contents.last.to_f
+    else
+
+      new_board = Board.new
+      new_board.generate
+      @total_time = 0
+    end
     @board = new_board
+
   end
 
   def flag(position)
@@ -41,17 +56,28 @@ class MineSweeper
   end
 
   def play
+    start_time = Time.now
     has_lost = false
-    until has_won?
+    has_won = false
+    until has_won
+
+
       @board.display
+
       p "Pick a tile to reveal:"
       input = gets.chomp.split(" ")
       input[0] = input[0].to_i
       input[1] = input[1].to_i
+
       if input[2] == "f"
         flag([input[0], input[1]])
       elsif input[2] == "u"
         unflag([input[0], input[1]])
+      elsif input[2] == "s"
+        @total_time = Time.now - start_time
+        save(input[3])
+        p "Game saved to #{input[3]}"
+        break
       else
         has_lost = reveal([input[0],input[1]])
       end
@@ -59,9 +85,21 @@ class MineSweeper
         p "You lose!"
         break
       end
-
+      has_won = has_won?
     end
-    p "You win!" unless has_lost
+
+    if has_won
+      @total_time = Time.now - start_time + @total_time
+      p "You've won in #{@total_time} seconds!"
+    end
+
+  end
+
+  def save(file = "save.txt")
+    File.open(file, "w") do |f|
+      f.puts @board.to_yaml
+      f.puts @total_time
+    end
   end
 
   def has_won?
@@ -140,7 +178,13 @@ class Board
   end
 
   def display
-    @board.each do |line|
+    headline = "  "
+    @size.times do |i|
+      headline += "#{i} "
+    end
+    puts headline
+    @board.each_with_index do |line, i|
+      print "#{i} "
       line.each do |tile|
 
         print tile.display_value
@@ -157,7 +201,12 @@ class Board
   end
 end
 
-
-game = MineSweeper.new
+p "Would you like to continue from a saved game? Y/N:"
+if gets.chomp.upcase == "Y"
+  p "Enter the saved game name:"
+  game = MineSweeper.new(gets.chomp)
+else
+  game = MineSweeper.new
+end
 
 game.play
