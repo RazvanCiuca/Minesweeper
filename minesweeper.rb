@@ -1,36 +1,33 @@
 require 'yaml'
+require 'colorize'
 
 class MineSweeper
   attr_accessor :board
   def initialize(save_file = "new" )
     if save_file != "new"
       save_contents = []
-      File.readlines(save_file).each do |line|
-        save_contents << line
-      end
-
+      File.readlines(save_file).each { |line| save_contents << line }
       new_board = YAML.load(save_contents[0..-2].join(""))
       @total_time = save_contents.last.to_f
     else
-
       new_board = Board.new
       new_board.generate
       @total_time = 0
     end
-    @board = new_board
 
+    @board = new_board
   end
 
   def flag(position)
     x, y = position
     @board.board[x][y].flagged = true
-    @board.board[x][y].display_value = "F "
+    @board.board[x][y].display_value = "F ".red
   end
 
   def unflag(position)
     x, y = position
     @board.board[x][y].flagged = false
-    @board.board[x][y].display_value = "* "
+    @board.board[x][y].display_value = "* ".white
   end
 
   def reveal(position)
@@ -42,14 +39,10 @@ class MineSweeper
       @board.board[x][y].revealed = true
 
       if number_of_bombs == 0
-        @board.board[x][y].display_value = "_ "
+        @board.board[x][y].display_value = "_ ".light_white
+        bomb_free_neighbors.each { |tile| reveal(tile) }
       else
-        @board.board[x][y].display_value = number_of_bombs.to_s + " "
-      end
-      if number_of_bombs == 0
-        bomb_free_neighbors.each do |tile|
-          reveal(tile)
-        end
+        @board.board[x][y].display_value = number_of_bombs.to_s.light_white + " "
       end
     end
     false
@@ -59,8 +52,8 @@ class MineSweeper
     start_time = Time.now
     has_lost = false
     has_won = false
-    until has_won
 
+    until has_won
 
       @board.display
 
@@ -180,22 +173,12 @@ class Board
   def display
     headline = "  "
     @size.times do |i|
-      headline += "#{i} "
+      headline += "#{i} ".yellow
     end
     puts headline
     @board.each_with_index do |line, i|
-      print "#{i} "
-      line.each do |tile|
-
-        print tile.display_value
-
-        # if tile.bombed == false
-#           print "* "
-#         else
-#           print "B "
-#         end
-
-      end
+      print "#{i} ".yellow
+      line.each { |tile| print tile.display_value }
       puts
     end
   end
