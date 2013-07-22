@@ -6,12 +6,22 @@ class MineSweeper
     @board = new_board
   end
 
+  def flag(position)
+    x, y = position
+    @board.board[x][y].flagged = true
+    @board.board[x][y].display_value = "F "
+  end
+
+  def unflag(position)
+    x, y = position
+    @board.board[x][y].flagged = false
+    @board.board[x][y].display_value = "* "
+  end
 
   def reveal(position)
     x, y = position
     if @board.board[x][y].bombed
-      puts "You lose!"
-      return
+      return true
     elsif !@board.board[x][y].revealed
       bomb_free_neighbors, number_of_bombs = check_neighbors(x, y)
       @board.board[x][y].revealed = true
@@ -21,12 +31,48 @@ class MineSweeper
       else
         @board.board[x][y].display_value = number_of_bombs.to_s + " "
       end
-        if number_of_bombs == 0
+      if number_of_bombs == 0
         bomb_free_neighbors.each do |tile|
           reveal(tile)
         end
       end
     end
+    false
+  end
+
+  def play
+    has_lost = false
+    until has_won?
+      @board.display
+      p "Pick a tile to reveal:"
+      input = gets.chomp.split(" ")
+      input[0] = input[0].to_i
+      input[1] = input[1].to_i
+      if input[2] == "f"
+        flag([input[0], input[1]])
+      elsif input[2] == "u"
+        unflag([input[0], input[1]])
+      else
+        has_lost = reveal([input[0],input[1]])
+      end
+      if has_lost
+        p "You lose!"
+        break
+      end
+
+    end
+    p "You win!" unless has_lost
+  end
+
+  def has_won?
+    @board.board.each do |line|
+      line.each do |tile|
+        if tile.display_value == "* "
+          return false
+        end
+      end
+    end
+    true
   end
 
   def check_neighbors(x, y)
@@ -112,6 +158,6 @@ class Board
 end
 
 
-# game = MineSweeper.new
-# game.reveal([1,1])
-# game.board.display
+game = MineSweeper.new
+
+game.play
