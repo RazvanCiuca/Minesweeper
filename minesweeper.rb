@@ -3,14 +3,14 @@ require 'colorize'
 
 class MineSweeper
   attr_accessor :board
-  def initialize(save_file = "new" )
+  def initialize(board_and_bombs = [9,10], save_file = "new" )
     if save_file != "new"
       save_contents = []
       File.readlines(save_file).each { |line| save_contents << line }
       new_board = YAML.load(save_contents[0..-2].join(""))
       @total_time = save_contents.last.to_f
     else
-      new_board = Board.new
+      new_board = Board.new(board_and_bombs[0],board_and_bombs[1])
       new_board.generate
       @total_time = 0
     end
@@ -27,7 +27,7 @@ class MineSweeper
   def unflag(position)
     x, y = position
     @board.board[x][y].flagged = false
-    @board.board[x][y].display_value = "* ".white
+    @board.board[x][y].display_value = "* "
   end
 
   def reveal(position)
@@ -54,10 +54,9 @@ class MineSweeper
     has_won = false
 
     until has_won
-
       @board.display
-
-      p "Pick a tile to reveal:"
+      puts
+      p "Pick a tile to reveal or flag:"
       input = gets.chomp.split(" ")
       input[0] = input[0].to_i
       input[1] = input[1].to_i
@@ -80,11 +79,26 @@ class MineSweeper
       end
       has_won = has_won?
     end
-
+    if has_lost
+      reveal_bombs
+      @board.display
+    end
     if has_won
       @total_time = Time.now - start_time + @total_time
       p "You've won in #{@total_time} seconds!"
     end
+
+  end
+
+  def reveal_bombs
+    (0..@board.board.size-1).each do |row|
+      (0..@board.board.size-1).each do |column|
+        if @board.board[row][column].bombed
+          @board.board[row][column].display_value = "B ".red
+        end
+      end
+    end
+
 
   end
 
@@ -171,13 +185,17 @@ class Board
   end
 
   def display
-    headline = "  "
+
+    top_half = "   "
+    bot_half = "   "
     @size.times do |i|
-      headline += "#{i} ".yellow
+      bot_half += "#{i % 10} ".yellow
+      top_half += "#{i / 10 == 0 ? " " : "#{i / 10}"} ".yellow
     end
-    puts headline
+    puts top_half
+    puts bot_half
     @board.each_with_index do |line, i|
-      print "#{i} ".yellow
+      print "#{i} ".rjust(3," ").yellow
       line.each { |tile| print tile.display_value }
       puts
     end
@@ -189,7 +207,8 @@ if gets.chomp.upcase == "Y"
   p "Enter the saved game name:"
   game = MineSweeper.new(gets.chomp)
 else
-  game = MineSweeper.new
+  p "Enter board size and number of bombs:"
+  game = MineSweeper.new(gets.chomp.split(" ").map(&:to_i))
 end
 
 game.play
